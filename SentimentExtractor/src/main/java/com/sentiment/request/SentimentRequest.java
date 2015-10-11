@@ -4,6 +4,7 @@ public class SentimentRequest {
 	private String text;
 	private String rid;
 	private String type;
+	private String authKey;
 
 	public String getText() {
 		return text;
@@ -22,6 +23,12 @@ public class SentimentRequest {
 	}
 	public void setType(String type) {
 		this.type = type;
+	}
+	public String getAuthKey() {
+		return authKey;
+	}
+	public void setAuthKey(String authkey) {
+		this.authKey = authkey;
 	}
 
 }

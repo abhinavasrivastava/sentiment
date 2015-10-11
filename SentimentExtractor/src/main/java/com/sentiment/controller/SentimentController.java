@@ -19,10 +19,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.sentiment.classifier.ClassifiedText;
 import com.sentiment.constants.Constants;
-import com.sentiment.exception.ValidationError;
 import com.sentiment.exception.Errors;
+import com.sentiment.exception.ValidationError;
+import com.sentiment.model.ApiUser;
 import com.sentiment.request.SentimentRequest;
 import com.sentiment.service.SentimentClassificationService;
+import com.sentiment.util.ApiKeycache;
 import com.sentiment.validation.RequestValidator;
 
 @Controller
@@ -33,6 +35,9 @@ public class SentimentController extends AbstractController{
 
 	@Autowired
 	RequestValidator requestValidator;
+	
+	@Autowired
+	ApiKeycache apiKeycache;
 	
 	Logger logger = Logger.getLogger(SentimentController.class);
 
@@ -50,6 +55,8 @@ public class SentimentController extends AbstractController{
 			jsonresp = processJSONResponse(null, errors);
 		}
 		else{
+			ApiUser apiUser = apiKeycache.getApiUser(request.getAuthKey());
+			String reqLog = "?logType=apiCount&apiType=1&apiUser=" + apiUser.getUser().getUserId();
 			ClassifiedText cText = sentimentClassificationService.getsentiment(request);
 			jsonresp = processJSONResponse(cText, errors);
 		}
