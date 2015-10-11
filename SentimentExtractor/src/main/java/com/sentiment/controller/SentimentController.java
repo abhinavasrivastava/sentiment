@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,10 +33,13 @@ public class SentimentController extends AbstractController{
 
 	@Autowired
 	RequestValidator requestValidator;
+	
+	Logger logger = Logger.getLogger(SentimentController.class);
 
 	@RequestMapping(value="/getresult",method = RequestMethod.GET)
 	public @ResponseBody ResponseEntity<String> getKeywordresults(@ModelAttribute("sentimentRequest")SentimentRequest request,
 			BindingResult bindingResult,HttpServletResponse response){
+
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.setContentType(Constants.JSON_MEDIA_TYPE);
 		String jsonresp = null;
@@ -49,6 +53,7 @@ public class SentimentController extends AbstractController{
 			ClassifiedText cText = sentimentClassificationService.getsentiment(request);
 			jsonresp = processJSONResponse(cText, errors);
 		}
+		logger.info("?request="+request.getText()+"&logtype=apicount");
 
 		return new ResponseEntity<String>(jsonresp, responseHeaders, HttpStatus.CREATED);
 	}
