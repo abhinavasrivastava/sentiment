@@ -16,7 +16,7 @@ public class GsonUtil {
 	private Gson gson;
 	
 	private GsonUtil(){
-		gson = new GsonBuilder().serializeNulls().create();
+		gson = new GsonBuilder().create();
 	}
 	
 	public Gson getGson(){

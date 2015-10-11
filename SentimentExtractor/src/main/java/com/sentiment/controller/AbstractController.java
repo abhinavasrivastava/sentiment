@@ -17,13 +17,15 @@ public abstract class AbstractController {
 		SentimentResponse resp = new SentimentResponse();
 		Header header = new Header();
 		resp.setHeader(header);
-		resp.setResult(cText);
+
 		if(errors.hasErrors()){
 			header.setStatus("0");
 			header.setErrors(errors);
 		}
-		else
-			header.setStatus("1");		
+		else{		
+			header.setStatus("1");
+			resp.setResult(cText.getSentimentClass());
+		}
 		jsonresp = gsonUtil.getGson().toJson(resp);		
 		return jsonresp;
 	}

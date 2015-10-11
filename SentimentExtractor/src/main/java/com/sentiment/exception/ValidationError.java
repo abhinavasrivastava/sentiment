@@ -1,10 +1,10 @@
 package com.sentiment.exception;
 
-public class Error {
+public class ValidationError {
 	private String errorCode;
 	private String message;
 
-	public Error(String errorCode, String message){
+	public ValidationError(String errorCode, String message){
 		this.errorCode = errorCode;
 		this.message = message;
 	}

@@ -4,21 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Errors {
-	private List<Error> errors = new ArrayList<Error>();
+	private List<ValidationError> error = new ArrayList<ValidationError>();
 
-	public List<Error> getErrors() {
-		return errors;
+	public List<ValidationError> getErrors() {
+		return error;
 	}
-	public void add(Error error){
-		errors.add(error);
+	public void add(ValidationError validationError){
+		error.add(validationError);
 	}
 	
 	public boolean hasErrors(){
-		return errors.size() != 0;
+		return error.size() != 0;
 	}
 	
-	public void addAll(Errors error){
-		errors.addAll(error.getErrors());
+	public void addAll(Errors errors){
+		error.addAll(errors.getErrors());
 	}
 }
 

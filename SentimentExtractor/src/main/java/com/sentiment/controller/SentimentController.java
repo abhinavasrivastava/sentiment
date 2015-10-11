@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.sentiment.classifier.ClassifiedText;
 import com.sentiment.constants.Constants;
-import com.sentiment.exception.Error;
+import com.sentiment.exception.ValidationError;
 import com.sentiment.exception.Errors;
 import com.sentiment.request.SentimentRequest;
 import com.sentiment.service.SentimentClassificationService;
@@ -54,7 +54,7 @@ public class SentimentController extends AbstractController{
 	}
 	protected void processValidationErrors(List<ObjectError> allErrors,	Errors errors) {
 		for(ObjectError valError:allErrors){
-			Error error=new Error(valError.getCode(), valError.getDefaultMessage());
+			ValidationError error=new ValidationError(valError.getCode(), valError.getDefaultMessage());
 			errors.add(error);
 		}
 	}
