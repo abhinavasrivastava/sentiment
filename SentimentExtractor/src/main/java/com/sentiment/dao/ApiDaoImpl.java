@@ -31,7 +31,7 @@ public class ApiDaoImpl {
 
 	public List<ApiUser> getAllApiUsers() throws AppException{
 		List<ApiUser> apiUsers = null;
-		String sql = "SELECT aat.user_id, aat.api_id, u.user_fname,u.user_lname,u.email_id "
+		String sql = "SELECT aat.user_id, aat.api_id, aat.api_auth_key, u.user_fname,u.user_lname,u.email_id "
 				+ "FROM api_auth_token aat, dq_user u WHERE aat.user_id=u.user_id AND u.dq_status=?";
 		try {
 			apiUsers = this.jdbcTemplate.query(sql,new Object[]{1},new ApiUserRowMapper());

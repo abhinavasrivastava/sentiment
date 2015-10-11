@@ -57,11 +57,10 @@ public class SentimentController extends AbstractController{
 		else{
 			ApiUser apiUser = apiKeycache.getApiUser(request.getAuthKey());
 			String reqLog = "?logType=apiCount&apiType=1&apiUser=" + apiUser.getUser().getUserId();
+			logger.info(reqLog);
 			ClassifiedText cText = sentimentClassificationService.getsentiment(request);
 			jsonresp = processJSONResponse(cText, errors);
 		}
-		logger.info("?request="+request.getText()+"&logtype=apicount");
-
 		return new ResponseEntity<String>(jsonresp, responseHeaders, HttpStatus.CREATED);
 	}
 	protected void processValidationErrors(List<ObjectError> allErrors,	Errors errors) {
