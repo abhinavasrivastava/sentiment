@@ -1,10 +1,8 @@
 package com.sentiment.response;
 
-import com.sentiment.classifier.ClassifiedText;
-
 public class SentimentResponse {
 	private Header header;
-	private ClassifiedText result;
+	private String result;
 
 	public Header getHeader() {
 		return header;
@@ -12,10 +10,10 @@ public class SentimentResponse {
 	public void setHeader(Header header) {
 		this.header = header;
 	}
-	public ClassifiedText getResult() {
+	public String getResult() {
 		return result;
 	}
-	public void setResult(ClassifiedText result) {
+	public void setResult(String result) {
 		this.result = result;
 	}
 
