@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -26,18 +27,26 @@ public class ApiKeycache {
 	}
 	
 	@PostConstruct
-	private void loadCache() throws AppException {
+	public void loadCache() throws AppException {
 		List<ApiUser>apiUsers = apiDaoImpl.getAllApiUsers();
+		Map<String, ApiUser> tmpApikeyUserCache = new ConcurrentHashMap<String, ApiUser>();
+		Map<ApiUser, String> tmpUserApikeyCache = new ConcurrentHashMap<ApiUser, String>();
 		if(apiUsers != null && apiUsers.size() > 0){
 			for(ApiUser apiUser : apiUsers){
-				apikeyUserCache.put(apiUser.getApiAuthKey(), apiUser);
-				userApikeyCache.put(apiUser, apiUser.getApiAuthKey());
+				tmpApikeyUserCache.put(apiUser.getApiAuthKey(), apiUser);
+				tmpUserApikeyCache.put(apiUser, apiUser.getApiAuthKey());
 			}
+			apikeyUserCache = tmpApikeyUserCache;
+			userApikeyCache = tmpUserApikeyCache;
 		}
 	}
 	
 	public ApiUser getApiUser(String apiAuthKey){
-		return apikeyUserCache.get(apiAuthKey);
+		ApiUser apiUser = null;
+		if(StringUtils.isNotBlank(apiAuthKey)){
+			apiUser = apikeyUserCache.get(apiAuthKey);
+		}
+		return apiUser;
 	}
 	
 	public String getApiKey(ApiUser user){
