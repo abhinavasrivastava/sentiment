@@ -1,16 +1,48 @@
 package com.sentiment.analyzer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
+import twitter4j.TwitterException;
+
+import com.sentiment.classifier.ClassifiedText;
+import com.sentiment.classifier.NaiveBayesClassifier;
+import com.sentiment.processor.EmoticonReplacer;
+import com.sentiment.processor.PruneTweetAttributes;
+import com.sentiment.processor.RemoveRepeatedCharacters;
+import com.sentiment.processor.TweetSlangSubstitution;
+import com.sentiment.processor.TweetStemmer;
+
+@Component
 public class SentimentAnalyzer {
 
-	/*public static ArrayList<String> getTweets(String topic) throws TwitterException, InterruptedException{
-		TweetManager tweetManager = new TweetManager();
-		ArrayList<String> tweets = tweetManager.getTweets(topic);
-		ArrayList<String> cleanedTweets = tweetManager.cleanTweets(tweets);
-		return cleanedTweets;
+	public List<String> cleanTweets(List<String> tweets){
+		List<String>cleanTweets = new ArrayList<String>();
+		for(String tweet: tweets){
+			String cleanTweet="";
+			List<String> tweetWords = Arrays.asList(tweet.split("\\s+"));
+			for(String word : tweetWords){
+				if(!PruneTweetAttributes.pruneTwitterAttributes(word)){
+					//remove exclamation marks etc
+					word = EmoticonReplacer.replaceEmoticon(word);
+					word = TweetSlangSubstitution.replaceSlang(word);
+					List<String> wordList = new ArrayList<String>(RemoveRepeatedCharacters.removeRepeated(word));
+					for(String repeatWord : wordList){
+						cleanTweet = cleanTweet+ " " + TweetStemmer.stemTweet(repeatWord); 
+					}
+				}
+			}
+			cleanTweets.add(cleanTweet);
+		}
+		return cleanTweets;
 	}
 
-	public static double[] analyzeSentiment(ArrayList<String> tweets) throws Exception
+	public double[] analyzeSentiment(List<String> tweets) 
 	{
+		tweets = cleanTweets(tweets);
 		NaiveBayesClassifier nbClassifier = new NaiveBayesClassifier();
 		double pos=0,neg=0,sentimentScore[] = new double[2];
 
@@ -26,7 +58,7 @@ public class SentimentAnalyzer {
 		return sentimentScore;
 	}
 
-	public static void main(String args[]) throws Exception{
+	/*public static void main(String args[]) throws Exception{
 		ResourceBundle rb = ResourceBundle.getBundle("topics");
 		String[] topics = rb.getString("tweet.topics").split(",");
 		for (String topic : topics){

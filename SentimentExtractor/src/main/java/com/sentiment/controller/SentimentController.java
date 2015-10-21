@@ -1,5 +1,7 @@
 package com.sentiment.controller;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +25,7 @@ import com.sentiment.exception.Errors;
 import com.sentiment.exception.ValidationError;
 import com.sentiment.model.ApiUser;
 import com.sentiment.request.SentimentRequest;
+import com.sentiment.service.ApiHitCountServiceImpl;
 import com.sentiment.service.SentimentClassificationService;
 import com.sentiment.util.ApiKeycache;
 import com.sentiment.validation.RequestValidator;
@@ -38,6 +41,9 @@ public class SentimentController extends AbstractController{
 	
 	@Autowired
 	ApiKeycache apiKeycache;
+	
+	@Autowired
+	ApiHitCountServiceImpl apiHitCountServiceImpl;
 	
 	Logger logger = Logger.getLogger(SentimentController.class);
 
@@ -63,6 +69,25 @@ public class SentimentController extends AbstractController{
 		}
 		return new ResponseEntity<String>(jsonresp, responseHeaders, HttpStatus.CREATED);
 	}
+	
+	@RequestMapping(value="/getApiHitCount",method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> getApiHitCount(@ModelAttribute("sentimentRequest")SentimentRequest request,
+			BindingResult bindingResult,HttpServletResponse response){
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.setContentType(Constants.JSON_MEDIA_TYPE);
+		String jsonresp = "";
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.DATE, -7);
+		
+		Object[][] result = apiHitCountServiceImpl.getApiHitData(4, 1, cal.getTime(), new Date());
+		for(Object[] obj : result){
+			System.out.println(obj[0] + " , " + obj[1]);
+		}
+		return new ResponseEntity<String>(jsonresp, responseHeaders, HttpStatus.CREATED);
+	}
+
+	
+	
 	protected void processValidationErrors(List<ObjectError> allErrors,	Errors errors) {
 		for(ObjectError valError:allErrors){
 			ValidationError error=new ValidationError(valError.getCode(), valError.getDefaultMessage());

@@ -18,7 +18,7 @@
 		   <property name="driverClass" value="com.mysql.jdbc.Driver" />
 		   <property name="jdbcUrl" value="jdbc:mysql://127.0.0.1:3306/dataquir?zeroDateTimeBehavior=convertToNull" />
 		   <property name="username" value="root"/>
-		   <!-- <property name="password" value="abhinava"/> -->
+		   <property name="password" value="abhinava"/>
 		   <property name="maxConnectionsPerPartition" value="30"/>
 		   <property name="minConnectionsPerPartition" value="10"/>
 		   <property name="partitionCount" value="3"/>
