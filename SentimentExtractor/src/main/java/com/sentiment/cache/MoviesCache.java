@@ -14,14 +14,14 @@ import com.sentiment.model.Movie;
 
 @Repository
 public class MoviesCache {
-	
+
 	Logger logger = Logger.getLogger(MoviesCache.class);
-	
+
 	@Autowired
 	CacheMasterDaoImpl cacheMasterDaoImpl;
-	
+
 	List<Movie>movies;
-	
+
 	@PostConstruct
 	public void loadAllMovies(){
 		try {
@@ -30,7 +30,7 @@ public class MoviesCache {
 			logger.error(e.getMessage(), e);
 		}
 	}
-	
+
 	public List<Movie> getAllMovies(){
 		return movies;
 	}

@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -40,6 +43,8 @@ public class TweetProcessingBatch {
 
 	@Autowired
 	MovieSentimentStatsDaoImpl movieSentimentStatsDaoImpl;
+	
+	private static int COLLECTION_TIME_DURAION_MIN = 1;
 
 
 	public void execute(){
@@ -59,12 +64,12 @@ public class TweetProcessingBatch {
 					String tagCloud = getTagCloud(clusters);
 
 					//Store
-					DateFormat inputFormatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
-					Date date = inputFormatter.parse(new Date().toString());
+					/*DateFormat inputFormatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+					Date date = inputFormatter.parse(new Date().toString());*/
 
-					DateFormat outputFormatter = new SimpleDateFormat("MM/dd/yyyy");
-					String output = outputFormatter.format(date); 
-					movieSentimentStatsDaoImpl.saveStats(movie.getId(), output, count, sentimentScore, tagCloud);
+					DateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
+					String collectionDate = outputFormatter.format(new Date()); 
+					movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, sentimentScore, tagCloud);
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -83,50 +88,64 @@ public class TweetProcessingBatch {
 	}
 
 	public List<String> collect(final String[] keywords) throws TwitterException, IOException{
-		final List<String> tweets = new ArrayList<String>();
 		long start = System.currentTimeMillis();
-		long end = start + 60*1000; // 60 seconds * 1000 ms/sec
-		while (System.currentTimeMillis() < end)
-		{
-			StatusListener listener = new StatusListener(){
-				public void onStatus(Status status) {
-					System.out.println(status.getUser().getName() + " : " + status.getText());
-					tweets.add(status.getText());
-				}
-				public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {}
-				public void onTrackLimitationNotice(int numberOfLimitedStatuses) {}
-				public void onException(Exception ex) {
-					ex.printStackTrace();
-				}
-				@Override
-				public void onScrubGeo(long arg0, long arg1) {
-					// TODO Auto-generated method stub
+		long end = start + COLLECTION_TIME_DURAION_MIN*60*1000; // 60 seconds * 1000 ms/sec
 
-				}
-				@Override
-				public void onStallWarning(StallWarning arg0) {
-					// TODO Auto-generated method stub
+		final BlockingQueue<Status> tweets = new LinkedBlockingQueue<Status>(); 
+		StatusListener listener = new StatusListener(){
+			public void onStatus(Status status) {
+				System.out.println(status.getUser().getName() + " : " + status.getText());
+				tweets.offer(status);
+			}
+			public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {}
+			public void onTrackLimitationNotice(int numberOfLimitedStatuses) {}
+			public void onException(Exception ex) {
+				ex.printStackTrace();
+			}
+			@Override
+			public void onScrubGeo(long arg0, long arg1) {
+				// TODO Auto-generated method stub
 
-				}
-			};
+			}
+			@Override
+			public void onStallWarning(StallWarning arg0) {
+				// TODO Auto-generated method stub
 
-			FilterQuery fq = new FilterQuery();        
-			//String keywords[] = {"#talvar"};
-			fq.track(keywords); 
-			fq.language("en");
+			}
+		};
 
-			TwitterStream twitterStream = new TwitterStreamFactory().getInstance();
-			twitterStream.addListener(listener);
-			twitterStream.filter(fq);
-			// sample() method internally creates a thread which manipulates TwitterStream and calls these adequate listener methods continuously.
-			twitterStream.sample();
+		FilterQuery fq = new FilterQuery();        
+		//String keywords[] = {"#talvar"};
+		fq.track(keywords); 
+		fq.language("en");
+
+		TwitterStream twitterStream = new TwitterStreamFactory().getInstance();
+		twitterStream.addListener(listener);
+		twitterStream.filter(fq);
+		
+		final List<String> collected = new ArrayList<String>();
+		while (System.currentTimeMillis() < end) {
+			Status status = null;
+			try{
+				status = tweets.poll(10, TimeUnit.SECONDS); 
+			}catch(InterruptedException ex){
+
+			}
+
+			if (status == null) {
+				// TODO: Consider hitting this too often could indicate no further Tweets
+				continue;
+			}
+			collected.add(status.getText());
 		}
-		return tweets;
+		twitterStream.shutdown();
+
+		return collected;
 	}
 
 	public static void main(String[] args) {
 		try {
-			new TweetProcessingBatch().collect(new String[]{"Talvar"});
+			new TweetProcessingBatch().collect(new String[]{"bihar"});
 		} catch (TwitterException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

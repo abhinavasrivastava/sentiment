@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import twitter4j.TwitterException;
@@ -18,6 +19,9 @@ import com.sentiment.processor.TweetStemmer;
 
 @Component
 public class SentimentAnalyzer {
+	
+	@Autowired
+	NaiveBayesClassifier naiveBayesClassifier;
 
 	public List<String> cleanTweets(List<String> tweets){
 		List<String>cleanTweets = new ArrayList<String>();
@@ -43,11 +47,11 @@ public class SentimentAnalyzer {
 	public double[] analyzeSentiment(List<String> tweets) 
 	{
 		tweets = cleanTweets(tweets);
-		NaiveBayesClassifier nbClassifier = new NaiveBayesClassifier();
+		//NaiveBayesClassifier nbClassifier = new NaiveBayesClassifier();
 		double pos=0,neg=0,sentimentScore[] = new double[2];
 
 		for(String tweet : tweets){
-			ClassifiedText cTweet = nbClassifier.classifyText(tweet);
+			ClassifiedText cTweet = naiveBayesClassifier.classifyText(tweet);
 			if(cTweet.getSentimentClass().equals("Positive"))
 				pos++;
 			else if (cTweet.getSentimentClass().equals("Negative"))
