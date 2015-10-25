@@ -87,11 +87,11 @@ public class TweetProcessingBatch {
 		return tagCloud;
 	}
 
-	public List<String> collect(final String[] keywords) throws TwitterException, IOException{
-		long start = System.currentTimeMillis();
-		long end = start + COLLECTION_TIME_DURAION_MIN*60*1000; // 60 seconds * 1000 ms/sec
-
-		final BlockingQueue<Status> tweets = new LinkedBlockingQueue<Status>(); 
+	
+	
+	
+	
+	private StatusListener getListener(final BlockingQueue<Status> tweets){
 		StatusListener listener = new StatusListener(){
 			public void onStatus(Status status) {
 				System.out.println(status.getUser().getName() + " : " + status.getText());
@@ -113,13 +113,45 @@ public class TweetProcessingBatch {
 
 			}
 		};
+		
+		return listener;
+	}
+	TwitterStream twitterStream = new TwitterStreamFactory().getInstance();
+	
+	public List<String> collect(final String[] keywords) throws TwitterException, IOException{
+		long start = System.currentTimeMillis();
+		long end = start + COLLECTION_TIME_DURAION_MIN*60*1000; // 60 seconds * 1000 ms/sec
 
+		final BlockingQueue<Status> tweets = new LinkedBlockingQueue<Status>(); 
+		/*StatusListener listener = new StatusListener(){
+			public void onStatus(Status status) {
+				System.out.println(status.getUser().getName() + " : " + status.getText());
+				tweets.offer(status);
+			}
+			public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {}
+			public void onTrackLimitationNotice(int numberOfLimitedStatuses) {}
+			public void onException(Exception ex) {
+				ex.printStackTrace();
+			}
+			@Override
+			public void onScrubGeo(long arg0, long arg1) {
+				// TODO Auto-generated method stub
+
+			}
+			@Override
+			public void onStallWarning(StallWarning arg0) {
+				// TODO Auto-generated method stub
+
+			}
+		};*/
+		
+		StatusListener listener = getListener(tweets);
 		FilterQuery fq = new FilterQuery();        
 		//String keywords[] = {"#talvar"};
 		fq.track(keywords); 
 		fq.language("en");
 
-		TwitterStream twitterStream = new TwitterStreamFactory().getInstance();
+		//TwitterStream twitterStream = new TwitterStreamFactory().getInstance();
 		twitterStream.addListener(listener);
 		twitterStream.filter(fq);
 		
@@ -138,7 +170,8 @@ public class TweetProcessingBatch {
 			}
 			collected.add(status.getText());
 		}
-		twitterStream.shutdown();
+		//twitterStream.shutdown();
+		twitterStream.clearListeners();
 
 		return collected;
 	}
