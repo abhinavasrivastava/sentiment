@@ -26,7 +26,7 @@ import twitter4j.TwitterStreamFactory;
 import com.sentiment.analyzer.SentimentAnalyzer;
 import com.sentiment.cache.MoviesCache;
 import com.sentiment.dao.MovieSentimentStatsDaoImpl;
-import com.sentiment.model.Movie;
+import com.sentiment.model.MovieDetail;
 import com.sentiment.processor.TopicClusterGenerator;
 
 @Component
@@ -48,8 +48,8 @@ public class TweetProcessingBatch {
 
 
 	public void execute(){
-		List<Movie>movies = moviesCache.getAllMovies();
-		for(Movie movie : movies){
+		List<MovieDetail>movies = moviesCache.getAllMovies();
+		for(MovieDetail movie : movies){
 			if(movie.getStartDate().compareTo(new Date()) < 0 && movie.getEndDate().compareTo(new Date()) > 0){
 				//Open Stream & collect tweets for 14 minutes
 				String[] keywords = movie.getKeywords().split(",");

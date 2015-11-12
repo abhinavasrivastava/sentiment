@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -64,6 +65,29 @@ public class MovieSentimentStatsDaoImpl {
 		return tweetSentimentTimeSeriesData;
 	}
 	
+	public Map<Integer, List<Object[]>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+		Map<Integer, List<Object[]>> tweetSentimentTimeSeriesData = null;
+		String sql = "SELECT movie_id, created_tx_stamp,sentiment_score FROM movie_sentiment_stats WHERE movie_id in (?) AND collection_date >=? AND collection_date <= ?";
+		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, StringUtils.join(movieIds, ","), startDate, endDate);
+		if(listMap != null && listMap.size() > 0){
+			tweetSentimentTimeSeriesData = new HashMap<Integer, List<Object[]>>();
+			for(Map<String, Object>map : listMap){
+				Integer movieId = (Integer)map.get("movie_id");
+				Date time = (Date)map.get("created_tx_stamp");
+				Integer sentimentScore = (Integer)map.get("sentiment_score");
+				
+				if(tweetSentimentTimeSeriesData.containsKey(movieId)){
+					tweetSentimentTimeSeriesData.get(movieId).add(new Object[]{time.getTime(), sentimentScore});
+				}else{
+					List<Object[]>dataPts =  new ArrayList<Object[]>();
+					dataPts.add(new Object[]{time.getTime(), sentimentScore});
+					tweetSentimentTimeSeriesData.put(movieId, dataPts);
+				}
+			}
+		}
+		return tweetSentimentTimeSeriesData;
+	}
+	
 	public Object[][] getTweetStrengthTimeSeriesData(int movieId, String startDate, String endDate) {
 		Object[][] tweetStrengthTimeSeriesData = null;
 		String sql = "SELECT created_tx_stamp,num_tweets FROM movie_sentiment_stats WHERE movie_id=? AND collection_date >=? AND collection_date <= ?";
@@ -73,13 +97,37 @@ public class MovieSentimentStatsDaoImpl {
 			int idx = 0;
 			for(Map<String, Object>map : listMap){
 				Date time = (Date)map.get("created_tx_stamp");
-				Integer sentimentScore = (Integer)map.get("num_tweets");
-				tweetStrengthTimeSeriesData[idx] = new Object[]{time.getTime(), sentimentScore};
+				Integer numTweets = (Integer)map.get("num_tweets");
+				tweetStrengthTimeSeriesData[idx] = new Object[]{time.getTime(), numTweets};
 				idx++;
 			}
 		}
 		return tweetStrengthTimeSeriesData;
 	}
+	
+	public Map<Integer, List<Object[]>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+		Map<Integer, List<Object[]>> tweetStrengthTimeSeriesData = null;
+		String sql = "SELECT movie_id, created_tx_stamp,num_tweets FROM movie_sentiment_stats WHERE movie_id in (?) AND collection_date >=? AND collection_date <= ?";
+		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, StringUtils.join(movieIds, ","), startDate, endDate);
+		if(listMap != null && listMap.size() > 0){
+			tweetStrengthTimeSeriesData = new HashMap<Integer, List<Object[]>>();
+			for(Map<String, Object>map : listMap){
+				Integer movieId = (Integer)map.get("movie_id");
+				Date time = (Date)map.get("created_tx_stamp");
+				Integer numTweets = (Integer)map.get("num_tweets");
+				
+				if(tweetStrengthTimeSeriesData.containsKey(movieId)){
+					tweetStrengthTimeSeriesData.get(movieId).add(new Object[]{time.getTime(), numTweets});
+				}else{
+					List<Object[]>dataPts =  new ArrayList<Object[]>();
+					dataPts.add(new Object[]{time.getTime(), numTweets});
+					tweetStrengthTimeSeriesData.put(movieId, dataPts);
+				}
+			}
+		}
+		return tweetStrengthTimeSeriesData;
+	}
+	
 	
 	public List<Map<String, Double>>getMovieTagCloudData(int movieId, String startDate, String endDate){
 		List<Map<String, Double>>movieTagCloudData = new ArrayList<Map<String,Double>>();
@@ -98,5 +146,16 @@ public class MovieSentimentStatsDaoImpl {
 			}
 		}
 		return movieTagCloudData;
+	}
+	
+	public Map<String, Object>getTotalTweetsCollectedTillDate(int movieId){
+		Map<String, Object> result = new HashMap<String, Object>();
+		String sql  = "SELECT movie_id, mtm.start_date, mtm.end_date, SUM(num_tweets) FROM movies_tweet_master mtm, movie_sentiment_stats mss "
+				+ "WHERE mtm.id = mss.movie_id AND mtm.id=? GROUP BY mtm.id";
+		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, movieId);
+		if(listMap != null && listMap.size() > 0){
+			result =  listMap.get(0);
+		}
+		return result;
 	}
 }

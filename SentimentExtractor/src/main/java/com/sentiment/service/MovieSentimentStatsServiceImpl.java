@@ -21,7 +21,15 @@ public class MovieSentimentStatsServiceImpl {
 		return tweetSentimentTimeSeriesData;
 	}
 	
-	public Object[][] getTweetStrngthTimeSeriesData(int movieId, String startDate, String endDate){
+	public Map<Integer, List<Object[]>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+		return movieSentimentStatsDaoImpl.getTweetSentimentTimeSeriesDataForMovies(movieIds, startDate, endDate);
+	}
+	
+	public Map<Integer, List<Object[]>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+		return movieSentimentStatsDaoImpl.getTweetStrengthTimeSeriesDataForMovies(movieIds, startDate, endDate);
+	}
+	
+	public Object[][] getTweetStrengthTimeSeriesData(int movieId, String startDate, String endDate){
 		Object[][] tweetStrngthTimeSeriesData = null;
 		tweetStrngthTimeSeriesData = movieSentimentStatsDaoImpl.getTweetStrengthTimeSeriesData(movieId, startDate, endDate);
 		return tweetStrngthTimeSeriesData;
@@ -40,5 +48,9 @@ public class MovieSentimentStatsServiceImpl {
 			}
 		}
 		return movieTagCloudData;
+	}
+	
+	public Map<String, Object>getTotalTweetsCollectedTillDate(int movieId){
+		return movieSentimentStatsDaoImpl.getTotalTweetsCollectedTillDate(movieId);
 	}
 }

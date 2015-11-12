@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.sentiment.exception.AppException;
-import com.sentiment.model.Movie;
+import com.sentiment.model.MovieDetail;
 
 @Repository
 public class CacheMasterDaoImpl {
@@ -27,11 +27,11 @@ public class CacheMasterDaoImpl {
 		}
 	}
 
-	public List<Movie> getAllMovies() throws AppException{
-		List<Movie> movies = null;
+	public List<MovieDetail> getAllMovies() throws AppException{
+		List<MovieDetail> movies = null;
 		String sql = "select * from movies_tweet_master where is_active=?";
 		try{
-			movies = jdbcTemplate.query(sql, new MovieRowMapper(), 1);
+			movies = jdbcTemplate.query(sql, new MovieDetailMapper(), 1);
 		}catch(DataAccessException e) {
 			LOGGER.error(e.getMessage());
 			throw new AppException(e.getMessage());
