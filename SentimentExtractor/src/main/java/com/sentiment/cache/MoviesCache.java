@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.sentiment.dao.CacheMasterDaoImpl;
 import com.sentiment.exception.AppException;
-import com.sentiment.model.MovieDetail;
+import com.sentiment.model.MovieTwSearchDetail;
 
 @Repository
 public class MoviesCache {
@@ -20,7 +20,7 @@ public class MoviesCache {
 	@Autowired
 	CacheMasterDaoImpl cacheMasterDaoImpl;
 
-	List<MovieDetail>movies;
+	List<MovieTwSearchDetail>movies;
 
 	@PostConstruct
 	public void loadAllMovies(){
@@ -31,7 +31,7 @@ public class MoviesCache {
 		}
 	}
 
-	public List<MovieDetail> getAllMovies(){
+	public List<MovieTwSearchDetail> getAllMovies(){
 		return movies;
 	}
 

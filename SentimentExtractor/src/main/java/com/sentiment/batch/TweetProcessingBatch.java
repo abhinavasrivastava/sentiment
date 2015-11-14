@@ -11,6 +11,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,11 +27,13 @@ import twitter4j.TwitterStreamFactory;
 import com.sentiment.analyzer.SentimentAnalyzer;
 import com.sentiment.cache.MoviesCache;
 import com.sentiment.dao.MovieSentimentStatsDaoImpl;
-import com.sentiment.model.MovieDetail;
+import com.sentiment.model.MovieTwSearchDetail;
 import com.sentiment.processor.TopicClusterGenerator;
 
 @Component
 public class TweetProcessingBatch {
+	
+	Logger logger = Logger.getLogger(TweetProcessingBatch.class);
 
 	@Autowired
 	MoviesCache moviesCache;
@@ -48,28 +51,31 @@ public class TweetProcessingBatch {
 
 
 	public void execute(){
-		List<MovieDetail>movies = moviesCache.getAllMovies();
-		for(MovieDetail movie : movies){
+		List<MovieTwSearchDetail>movies = moviesCache.getAllMovies();
+		for(MovieTwSearchDetail movie : movies){
 			if(movie.getStartDate().compareTo(new Date()) < 0 && movie.getEndDate().compareTo(new Date()) > 0){
 				//Open Stream & collect tweets for 14 minutes
 				String[] keywords = movie.getKeywords().split(",");
 				try {
 					List<String>tweets = collect(keywords);
+					if(tweets.size() > 0){
+						//Process & compute
+						int count = tweets.size();
+						double[] scores = sentimentAnalyzer.analyzeSentiment(tweets);
+						int sentimentScore = (int)((scores[0]*100) / (scores[0] + scores[1]));
+						Map<String, Double>clusters = topicClusterGenerator.getTopicClusters(tweets);
+						String tagCloud = getTagCloud(clusters);
 
-					//Process & compute
-					int count = tweets.size();
-					double[] scores = sentimentAnalyzer.analyzeSentiment(tweets);
-					int sentimentScore = (int)((scores[0]*100) / (scores[0] + scores[1]));
-					Map<String, Double>clusters = topicClusterGenerator.getTopicClusters(tweets);
-					String tagCloud = getTagCloud(clusters);
-
-					//Store
-					/*DateFormat inputFormatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+						//Store
+						/*DateFormat inputFormatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
 					Date date = inputFormatter.parse(new Date().toString());*/
 
-					DateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
-					String collectionDate = outputFormatter.format(new Date()); 
-					movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, sentimentScore, tagCloud);
+						DateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
+						String collectionDate = outputFormatter.format(new Date()); 
+						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, sentimentScore, tagCloud);
+					}else{
+						logger.info("No tweets for movieId - " + movie.getId());
+					}
 
 				} catch (Exception e) {
 					e.printStackTrace();

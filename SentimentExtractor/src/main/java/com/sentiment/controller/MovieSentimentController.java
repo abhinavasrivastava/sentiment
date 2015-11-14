@@ -12,13 +12,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
+import com.sentiment.response.DqApiResponse;
+import com.sentiment.response.Header;
 import com.sentiment.service.MovieSentimentStatsServiceImpl;
+import com.sentiment.util.APIsConstant;
 
 @Controller
 @RequestMapping(value="/movie/stats")
@@ -27,27 +29,33 @@ public class MovieSentimentController {
 	@Autowired
 	MovieSentimentStatsServiceImpl movieSentimentStatsServiceImpl;
 
-	@RequestMapping(value="/getSentimentData",method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getSentimentData(HttpServletRequest request,
-			BindingResult bindingResult,HttpServletResponse response){
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
-		int movieId = Integer.parseInt(request.getParameter(""));
+	@RequestMapping(value="/getMovieSentimentData",method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> getMovieSentimentData(HttpServletRequest request, HttpServletResponse response){
+		int movieId = Integer.parseInt(request.getParameter("movieId"));
 		String startDate = request.getParameter("sdate");
 		String endDate = request.getParameter("edate");
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		String jsonResp = "";
+		DqApiResponse<Object[][]> resp = new DqApiResponse<Object[][]>();
+		Header header = new Header();
+		resp.setHeader(header);
+		
 		Object[][] result =  movieSentimentStatsServiceImpl.getTweetSentimentTimeSeriesData(movieId, startDate, endDate);
+		if(result != null && result.length > 0){
+			resp.setBody(result);
+			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
+		}else{
+			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
+		}
 		Gson gson = new Gson();
-		String data = "NDF";
-		if(result.length > 0) data = gson.toJson(result);
-		return new ResponseEntity<String>(data, responseHeaders, HttpStatus.CREATED);
+		jsonResp = gson.toJson(resp);
+		return new ResponseEntity<String>(jsonResp, responseHeaders, HttpStatus.CREATED);
 		
 	}
 	
-	@RequestMapping(value="/getSentimentDataForMovies",method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getSentimentDataForMovies(HttpServletRequest request,
-			BindingResult bindingResult,HttpServletResponse response){
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+	@RequestMapping(value="/getMoviesSentimentData",method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> getMoviesSentimentData(HttpServletRequest request, HttpServletResponse response){
 		String[] ids = request.getParameter("movieIds").split(",");
 		List<Integer>movieIds = new ArrayList<Integer>();
 		for(String id:ids){
@@ -55,34 +63,54 @@ public class MovieSentimentController {
 		}
 		String startDate = request.getParameter("sdate");
 		String endDate = request.getParameter("edate");
+		
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		String jsonResp = "";
+		DqApiResponse<Map<Integer, List<Object[]>>> resp = new DqApiResponse<Map<Integer, List<Object[]>>>();
+		Header header = new Header();
+		resp.setHeader(header);
+		
 		Map<Integer, List<Object[]>> result =  movieSentimentStatsServiceImpl.getTweetSentimentTimeSeriesDataForMovies(movieIds, startDate, endDate);
+		if(result != null && result.size() > 0){
+			resp.setBody(result);
+			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
+		}else{
+			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
+		}
 		Gson gson = new Gson();
-		String data = "NDF";
-		if(result.size() > 0) data = gson.toJson(result);
-		return new ResponseEntity<String>(data, responseHeaders, HttpStatus.CREATED);
+		jsonResp = gson.toJson(resp);
+		return new ResponseEntity<String>(jsonResp, responseHeaders, HttpStatus.CREATED);
 		
 	}
 	
-	@RequestMapping(value="/getStrengthData",method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getStrengthData(HttpServletRequest request,
-			BindingResult bindingResult,HttpServletResponse response){
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
-		int movieId = Integer.parseInt(request.getParameter(""));
+	@RequestMapping(value="/getMovieStrengthData",method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> getMovieStrengthData(HttpServletRequest request, HttpServletResponse response){
+		int movieId = Integer.parseInt(request.getParameter("movieId"));
 		String startDate = request.getParameter("sdate");
 		String endDate = request.getParameter("edate");
-		Object[][] result =  movieSentimentStatsServiceImpl.getTweetStrengthTimeSeriesData(movieId, startDate, endDate);
-		Gson gson = new Gson();
-		String data = "NDF";
-		if(result.length > 0) data = gson.toJson(result);
-		return new ResponseEntity<String>(data, responseHeaders, HttpStatus.CREATED);
-	}
-	
-	@RequestMapping(value="/getStrengthDataForMovies",method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getStrengthDataForMovies(HttpServletRequest request,
-			BindingResult bindingResult,HttpServletResponse response){
+		
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		String jsonResp = "";
+		DqApiResponse<Object[][]> resp = new DqApiResponse<Object[][]>();
+		Header header = new Header();
+		resp.setHeader(header);
+		
+		Object[][] result =  movieSentimentStatsServiceImpl.getTweetStrengthTimeSeriesData(movieId, startDate, endDate);
+		if(result != null && result.length > 0){
+			resp.setBody(result);
+			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
+		}else{
+			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
+		}
+		Gson gson = new Gson();
+		jsonResp = gson.toJson(resp);
+		return new ResponseEntity<String>(jsonResp, responseHeaders, HttpStatus.CREATED);
+	}
+	
+	@RequestMapping(value="/getMoviesStrengthData",method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> getMoviesStrengthDataForMovies(HttpServletRequest request, HttpServletResponse response){
 		String[] ids = request.getParameter("movieIds").split(",");
 		List<Integer>movieIds = new ArrayList<Integer>();
 		for(String id:ids){
@@ -90,40 +118,74 @@ public class MovieSentimentController {
 		}
 		String startDate = request.getParameter("sdate");
 		String endDate = request.getParameter("edate");
+		
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		String jsonResp = "";
+		DqApiResponse<Map<Integer, List<Object[]>>> resp = new DqApiResponse<Map<Integer, List<Object[]>>>();
+		Header header = new Header();
+		resp.setHeader(header);
+		
 		Map<Integer, List<Object[]>> result =  movieSentimentStatsServiceImpl.getTweetStrengthTimeSeriesDataForMovies(movieIds, startDate, endDate);
+		if(result != null && result.size() > 0){
+			resp.setBody(result);
+			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
+		}else{
+			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
+		}
 		Gson gson = new Gson();
-		String data = "NDF";
-		if(result.size() > 0) data = gson.toJson(result);
-		return new ResponseEntity<String>(data, responseHeaders, HttpStatus.CREATED);
+		jsonResp = gson.toJson(resp);
+		return new ResponseEntity<String>(jsonResp, responseHeaders, HttpStatus.CREATED);
 	}
 	
 	
 	@RequestMapping(value="/getTagCloudData",method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getTagCloudData(HttpServletRequest request,
-			BindingResult bindingResult,HttpServletResponse response){
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
-		int movieId = Integer.parseInt(request.getParameter(""));
+	public @ResponseBody ResponseEntity<String> getTagCloudData(HttpServletRequest request, HttpServletResponse response){
+		int movieId = Integer.parseInt(request.getParameter("movieId"));
 		String startDate = request.getParameter("sdate");
 		String endDate = request.getParameter("edate");
+		
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		String jsonResp = "";
+		DqApiResponse<Map<String, Double>> resp = new DqApiResponse<Map<String, Double>>();
+		Header header = new Header();
+		resp.setHeader(header);
+		
 		Map<String, Double> result =  movieSentimentStatsServiceImpl.getMovieTagCloudData(movieId, startDate, endDate);
+		if(result != null && result.size() > 0){
+			resp.setBody(result);
+			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
+		}else{
+			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
+		}
 		Gson gson = new Gson();
-		String data = "NDF";
-		if(result.size() > 0) data = gson.toJson(result);
-		return new ResponseEntity<String>(data, responseHeaders, HttpStatus.CREATED);
+		jsonResp = gson.toJson(resp);
+		return new ResponseEntity<String>(jsonResp, responseHeaders, HttpStatus.CREATED);
 	}
 	
 	
 	@RequestMapping(value="/getTotalTweetsCollectedTillDate",method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> getTotalTweetsCollectedTillDate(HttpServletRequest request,
-			BindingResult bindingResult,HttpServletResponse response){
+	public @ResponseBody ResponseEntity<String> getTotalTweetsCollectedTillDate(HttpServletRequest request, HttpServletResponse response){
+		int movieId = Integer.parseInt(request.getParameter("movieId"));
+		
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
-		int movieId = Integer.parseInt(request.getParameter(""));
-		Map<String, Object>resultMap = movieSentimentStatsServiceImpl.getTotalTweetsCollectedTillDate(movieId);
+		String jsonResp = "";
+		DqApiResponse<Map<String, Object>> resp = new DqApiResponse<Map<String, Object>>();
+		Header header = new Header();
+		resp.setHeader(header);
+		
+		Map<String, Object>result = movieSentimentStatsServiceImpl.getTotalTweetsCollectedTillDate(movieId);
+		
+		if(result != null && result.size() > 0){
+			resp.setBody(result);
+			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
+		}else{
+			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
+		}
 		Gson gson = new Gson();
-		String data = "NDF";
-		if(resultMap.size() > 0) data = gson.toJson(resultMap);
-		return new ResponseEntity<String>(data, responseHeaders, HttpStatus.CREATED);
+		jsonResp = gson.toJson(resp);
+		return new ResponseEntity<String>(jsonResp, responseHeaders, HttpStatus.CREATED);
 	}
 }

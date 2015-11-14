@@ -5,13 +5,13 @@ import java.sql.SQLException;
 
 import org.springframework.jdbc.core.RowMapper;
 
-import com.sentiment.model.MovieDetail;
+import com.sentiment.model.MovieTwSearchDetail;
 
-public class MovieDetailMapper implements  RowMapper<MovieDetail> {
+public class MovieTwSearchDetailMapper implements  RowMapper<MovieTwSearchDetail> {
 
 	@Override
-	public MovieDetail mapRow(ResultSet rs, int rowNum) throws SQLException {
-		MovieDetail movie = new MovieDetail();
+	public MovieTwSearchDetail mapRow(ResultSet rs, int rowNum) throws SQLException {
+		MovieTwSearchDetail movie = new MovieTwSearchDetail();
 		movie.setId(rs.getInt("mov_id"));
 		movie.setKeywords(rs.getString("keywords"));
 		movie.setStartDate(rs.getDate("start_date"));

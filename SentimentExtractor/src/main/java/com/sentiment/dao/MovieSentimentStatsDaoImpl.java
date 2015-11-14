@@ -67,8 +67,8 @@ public class MovieSentimentStatsDaoImpl {
 	
 	public Map<Integer, List<Object[]>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
 		Map<Integer, List<Object[]>> tweetSentimentTimeSeriesData = null;
-		String sql = "SELECT movie_id, created_tx_stamp,sentiment_score FROM movie_sentiment_stats WHERE movie_id in (?) AND collection_date >=? AND collection_date <= ?";
-		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, StringUtils.join(movieIds, ","), startDate, endDate);
+		String sql = "SELECT movie_id, created_tx_stamp,sentiment_score FROM movie_sentiment_stats WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") AND collection_date >=? AND collection_date <= ?";
+		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, startDate, endDate);
 		if(listMap != null && listMap.size() > 0){
 			tweetSentimentTimeSeriesData = new HashMap<Integer, List<Object[]>>();
 			for(Map<String, Object>map : listMap){
@@ -107,8 +107,9 @@ public class MovieSentimentStatsDaoImpl {
 	
 	public Map<Integer, List<Object[]>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
 		Map<Integer, List<Object[]>> tweetStrengthTimeSeriesData = null;
-		String sql = "SELECT movie_id, created_tx_stamp,num_tweets FROM movie_sentiment_stats WHERE movie_id in (?) AND collection_date >=? AND collection_date <= ?";
-		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, StringUtils.join(movieIds, ","), startDate, endDate);
+		String sql = "SELECT movie_id, created_tx_stamp,num_tweets FROM movie_sentiment_stats "
+				+ "WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") AND collection_date >=? AND collection_date <= ?";
+		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, startDate, endDate);
 		if(listMap != null && listMap.size() > 0){
 			tweetStrengthTimeSeriesData = new HashMap<Integer, List<Object[]>>();
 			for(Map<String, Object>map : listMap){
@@ -137,7 +138,7 @@ public class MovieSentimentStatsDaoImpl {
 			for(Map<String, Object>map : listMap){
 				String tgCloud =  (String)map.get("tag_cloud");
 				Map<String, Double>tgMap = new HashMap<String, Double>();
-				String[]tags = tgCloud.split("$$$");
+				String[]tags = tgCloud.split("\\$\\$\\$");
 				for(String tag: tags){
 					String[] tokens = tag.split("@@@");
 					tgMap.put(tokens[0], Double.parseDouble(tokens[1]));
@@ -150,8 +151,8 @@ public class MovieSentimentStatsDaoImpl {
 	
 	public Map<String, Object>getTotalTweetsCollectedTillDate(int movieId){
 		Map<String, Object> result = new HashMap<String, Object>();
-		String sql  = "SELECT movie_id, mtm.start_date, mtm.end_date, SUM(num_tweets) FROM movies_tweet_master mtm, movie_sentiment_stats mss "
-				+ "WHERE mtm.id = mss.movie_id AND mtm.id=? GROUP BY mtm.id";
+		String sql  = "SELECT mss.movie_id as movieId, mtm.start_date as startDate, mtm.end_date as endDate, SUM(num_tweets) as totalTweets FROM movies_tweet_master mtm, movie_sentiment_stats mss "
+				+ "WHERE mtm.mov_id = mss.movie_id and mtm.mov_id=? GROUP BY mtm.mov_id";
 		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, movieId);
 		if(listMap != null && listMap.size() > 0){
 			result =  listMap.get(0);

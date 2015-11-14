@@ -2,7 +2,7 @@ package com.sentiment.model;
 
 import java.util.Date;
 
-public class MovieDetail {
+public class MovieTwSearchDetail {
 	
 	private int id;
 	private String keywords;
