@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.google.gson.Gson;
 import com.sentiment.response.DqApiResponse;
+import com.sentiment.response.GraphApiResponseUtil;
 import com.sentiment.response.Header;
 import com.sentiment.service.MovieSentimentStatsServiceImpl;
 import com.sentiment.util.APIsConstant;
@@ -36,14 +37,18 @@ public class MovieSentimentController {
 		String endDate = request.getParameter("edate");
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		responseHeaders.add("Access-Control-Allow-Origin", "*");
+		responseHeaders.add("Access-Control-Allow-Headers", "*");
 		String jsonResp = "";
-		DqApiResponse<Object[][]> resp = new DqApiResponse<Object[][]>();
+		//DqApiResponse<Object[][]> resp = new DqApiResponse<Object[][]>();
+		DqApiResponse<List<Map<Object, Object>>> resp = new DqApiResponse<List<Map<Object, Object>>>();
 		Header header = new Header();
 		resp.setHeader(header);
 		
 		Object[][] result =  movieSentimentStatsServiceImpl.getTweetSentimentTimeSeriesData(movieId, startDate, endDate);
 		if(result != null && result.length > 0){
-			resp.setBody(result);
+			List<Map<Object, Object>> points =  GraphApiResponseUtil.getDataForAmChart(result);
+			resp.setBody(points);
 			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
 		}else{
 			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
@@ -66,14 +71,18 @@ public class MovieSentimentController {
 		
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		responseHeaders.add("Access-Control-Allow-Origin", "*");
+		responseHeaders.add("Access-Control-Allow-Headers", "*");
 		String jsonResp = "";
-		DqApiResponse<Map<Integer, List<Object[]>>> resp = new DqApiResponse<Map<Integer, List<Object[]>>>();
+		//DqApiResponse<Map<Integer, List<Object[]>>> resp = new DqApiResponse<Map<Integer, List<Object[]>>>();
+		DqApiResponse<List<Map<Object, Object>>> resp = new DqApiResponse<List<Map<Object, Object>>>();
 		Header header = new Header();
 		resp.setHeader(header);
 		
-		Map<Integer, List<Object[]>> result =  movieSentimentStatsServiceImpl.getTweetSentimentTimeSeriesDataForMovies(movieIds, startDate, endDate);
+		Map<Long, Map<Integer, Integer>> result =  movieSentimentStatsServiceImpl.getTweetSentimentTimeSeriesDataForMovies(movieIds, startDate, endDate);
 		if(result != null && result.size() > 0){
-			resp.setBody(result);
+			List<Map<Object, Object>> points = GraphApiResponseUtil.getDataForAmChart(result);
+			resp.setBody(points);
 			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
 		}else{
 			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
@@ -92,14 +101,18 @@ public class MovieSentimentController {
 		
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		responseHeaders.add("Access-Control-Allow-Origin", "*");
+		responseHeaders.add("Access-Control-Allow-Headers", "*");
 		String jsonResp = "";
-		DqApiResponse<Object[][]> resp = new DqApiResponse<Object[][]>();
+		//DqApiResponse<Object[][]> resp = new DqApiResponse<Object[][]>();
+		DqApiResponse<List<Map<Object, Object>>> resp = new DqApiResponse<List<Map<Object, Object>>>();
 		Header header = new Header();
 		resp.setHeader(header);
 		
 		Object[][] result =  movieSentimentStatsServiceImpl.getTweetStrengthTimeSeriesData(movieId, startDate, endDate);
 		if(result != null && result.length > 0){
-			resp.setBody(result);
+			List<Map<Object, Object>>points =  GraphApiResponseUtil.getDataForAmChart(result);
+			resp.setBody(points);
 			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
 		}else{
 			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
@@ -121,14 +134,18 @@ public class MovieSentimentController {
 		
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		responseHeaders.add("Access-Control-Allow-Origin", "*");
+		responseHeaders.add("Access-Control-Allow-Headers", "*");
 		String jsonResp = "";
-		DqApiResponse<Map<Integer, List<Object[]>>> resp = new DqApiResponse<Map<Integer, List<Object[]>>>();
+		//DqApiResponse<Map<Integer, List<Object[]>>> resp = new DqApiResponse<Map<Integer, List<Object[]>>>();
+		DqApiResponse<List<Map<Object, Object>>> resp = new DqApiResponse<List<Map<Object, Object>>>();
 		Header header = new Header();
 		resp.setHeader(header);
 		
-		Map<Integer, List<Object[]>> result =  movieSentimentStatsServiceImpl.getTweetStrengthTimeSeriesDataForMovies(movieIds, startDate, endDate);
+		Map<Long, Map<Integer, Integer>> result =  movieSentimentStatsServiceImpl.getTweetStrengthTimeSeriesDataForMovies(movieIds, startDate, endDate);
 		if(result != null && result.size() > 0){
-			resp.setBody(result);
+			List<Map<Object, Object>> points = GraphApiResponseUtil.getDataForAmChart(result);
+			resp.setBody(points);
 			header.setStatus(APIsConstant.RESPONSE_STATUS_OK);
 		}else{
 			header.setStatus(APIsConstant.RESPONSE_STATUS_ERROR);
@@ -147,6 +164,8 @@ public class MovieSentimentController {
 		
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		responseHeaders.add("Access-Control-Allow-Origin", "*");
+		responseHeaders.add("Access-Control-Allow-Headers", "*");
 		String jsonResp = "";
 		DqApiResponse<Map<String, Double>> resp = new DqApiResponse<Map<String, Double>>();
 		Header header = new Header();
@@ -171,6 +190,8 @@ public class MovieSentimentController {
 		
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		responseHeaders.add("Access-Control-Allow-Origin", "*");
+		responseHeaders.add("Access-Control-Allow-Headers", "*");
 		String jsonResp = "";
 		DqApiResponse<Map<String, Object>> resp = new DqApiResponse<Map<String, Object>>();
 		Header header = new Header();

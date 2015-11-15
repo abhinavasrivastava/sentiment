@@ -51,6 +51,9 @@ public class TweetProcessingBatch {
 
 
 	public void execute(){
+		Date date = new Date();
+		DateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
+		String collectionDate = outputFormatter.format(date); 
 		List<MovieTwSearchDetail>movies = moviesCache.getAllMovies();
 		for(MovieTwSearchDetail movie : movies){
 			if(movie.getStartDate().compareTo(new Date()) < 0 && movie.getEndDate().compareTo(new Date()) > 0){
@@ -65,16 +68,10 @@ public class TweetProcessingBatch {
 						int sentimentScore = (int)((scores[0]*100) / (scores[0] + scores[1]));
 						Map<String, Double>clusters = topicClusterGenerator.getTopicClusters(tweets);
 						String tagCloud = getTagCloud(clusters);
-
-						//Store
-						/*DateFormat inputFormatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
-					Date date = inputFormatter.parse(new Date().toString());*/
-
-						DateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
-						String collectionDate = outputFormatter.format(new Date()); 
-						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, sentimentScore, tagCloud);
+						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, sentimentScore, tagCloud, date);
 					}else{
 						logger.info("No tweets for movieId - " + movie.getId());
+						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, 0, 0, null, date);
 					}
 
 				} catch (Exception e) {
@@ -178,6 +175,13 @@ public class TweetProcessingBatch {
 		}
 		//twitterStream.shutdown();
 		twitterStream.clearListeners();
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 
 		return collected;
 	}

@@ -3,6 +3,7 @@ package com.sentiment.dao;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class MovieSentimentStatsDaoImpl {
 		}
 	}
 
-	public void saveStats(int movieId, String collectionDate, int numTweets, int sentimentScore, String tagCloud){
+	public void saveStats(int movieId, String collectionDate, int numTweets, int sentimentScore, String tagCloud, Date date){
 		String sql = "insert into movie_sentiment_stats ("
 				+ "movie_id,"
 				+ "collection_date,"
@@ -44,8 +45,8 @@ public class MovieSentimentStatsDaoImpl {
 				numTweets,
 				sentimentScore,
 				tagCloud,
-				new Date(),
-				new Date());
+				date,
+				date);
 	}
 
 	public Object[][] getTweetSentimentTimeSeriesData(int movieId, String startDate, String endDate) {
@@ -65,7 +66,7 @@ public class MovieSentimentStatsDaoImpl {
 		return tweetSentimentTimeSeriesData;
 	}
 	
-	public Map<Integer, List<Object[]>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+	/*public Map<Integer, List<Object[]>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
 		Map<Integer, List<Object[]>> tweetSentimentTimeSeriesData = null;
 		String sql = "SELECT movie_id, created_tx_stamp,sentiment_score FROM movie_sentiment_stats WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") AND collection_date >=? AND collection_date <= ?";
 		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, startDate, endDate);
@@ -82,6 +83,29 @@ public class MovieSentimentStatsDaoImpl {
 					List<Object[]>dataPts =  new ArrayList<Object[]>();
 					dataPts.add(new Object[]{time.getTime(), sentimentScore});
 					tweetSentimentTimeSeriesData.put(movieId, dataPts);
+				}
+			}
+		}
+		return tweetSentimentTimeSeriesData;
+	}
+	*/
+	public Map<Long, Map<Integer, Integer>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+		Map<Long, Map<Integer, Integer>> tweetSentimentTimeSeriesData = null;
+		String sql = "SELECT movie_id, created_tx_stamp,sentiment_score FROM movie_sentiment_stats WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") AND collection_date >=? AND collection_date <= ?";
+		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, startDate, endDate);
+		if(listMap != null && listMap.size() > 0){
+			tweetSentimentTimeSeriesData = new LinkedHashMap<Long, Map<Integer,Integer>>();
+			for(Map<String, Object>map : listMap){
+				Integer movieId = (Integer)map.get("movie_id");
+				Date time = (Date)map.get("created_tx_stamp");
+				Integer sentimentScore = (Integer)map.get("sentiment_score");
+				
+				if(tweetSentimentTimeSeriesData.containsKey(time.getTime())){
+					tweetSentimentTimeSeriesData.get(time.getTime()).put(movieId, sentimentScore);
+				}else{
+					Map<Integer, Integer>dataPts =  new LinkedHashMap<Integer, Integer>();
+					dataPts.put(movieId, sentimentScore);
+					tweetSentimentTimeSeriesData.put(time.getTime(), dataPts);
 				}
 			}
 		}
@@ -105,24 +129,24 @@ public class MovieSentimentStatsDaoImpl {
 		return tweetStrengthTimeSeriesData;
 	}
 	
-	public Map<Integer, List<Object[]>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
-		Map<Integer, List<Object[]>> tweetStrengthTimeSeriesData = null;
+	public Map<Long, Map<Integer, Integer>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+		Map<Long, Map<Integer, Integer>> tweetStrengthTimeSeriesData = null;
 		String sql = "SELECT movie_id, created_tx_stamp,num_tweets FROM movie_sentiment_stats "
 				+ "WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") AND collection_date >=? AND collection_date <= ?";
 		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, startDate, endDate);
 		if(listMap != null && listMap.size() > 0){
-			tweetStrengthTimeSeriesData = new HashMap<Integer, List<Object[]>>();
+			tweetStrengthTimeSeriesData = new LinkedHashMap<Long, Map<Integer,Integer>>();
 			for(Map<String, Object>map : listMap){
 				Integer movieId = (Integer)map.get("movie_id");
 				Date time = (Date)map.get("created_tx_stamp");
 				Integer numTweets = (Integer)map.get("num_tweets");
 				
-				if(tweetStrengthTimeSeriesData.containsKey(movieId)){
-					tweetStrengthTimeSeriesData.get(movieId).add(new Object[]{time.getTime(), numTweets});
+				if(tweetStrengthTimeSeriesData.containsKey(time.getTime())){
+					tweetStrengthTimeSeriesData.get(time.getTime()).put(movieId, numTweets);
 				}else{
-					List<Object[]>dataPts =  new ArrayList<Object[]>();
-					dataPts.add(new Object[]{time.getTime(), numTweets});
-					tweetStrengthTimeSeriesData.put(movieId, dataPts);
+					Map<Integer, Integer>dataPts =  new LinkedHashMap<Integer, Integer>();
+					dataPts.put(movieId, numTweets);
+					tweetStrengthTimeSeriesData.put(time.getTime(), dataPts);
 				}
 			}
 		}
@@ -137,13 +161,15 @@ public class MovieSentimentStatsDaoImpl {
 		if(listMap != null && listMap.size() > 0){
 			for(Map<String, Object>map : listMap){
 				String tgCloud =  (String)map.get("tag_cloud");
-				Map<String, Double>tgMap = new HashMap<String, Double>();
-				String[]tags = tgCloud.split("\\$\\$\\$");
-				for(String tag: tags){
-					String[] tokens = tag.split("@@@");
-					tgMap.put(tokens[0], Double.parseDouble(tokens[1]));
+				if(StringUtils.isNotBlank(tgCloud)){
+					Map<String, Double>tgMap = new HashMap<String, Double>();
+					String[]tags = tgCloud.split("\\$\\$\\$");
+					for(String tag: tags){
+						String[] tokens = tag.split("@@@");
+						tgMap.put(tokens[0], Double.parseDouble(tokens[1]));
+					}
+					movieTagCloudData.add(tgMap);
 				}
-				movieTagCloudData.add(tgMap);
 			}
 		}
 		return movieTagCloudData;

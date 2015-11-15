@@ -21,11 +21,11 @@ public class MovieSentimentStatsServiceImpl {
 		return tweetSentimentTimeSeriesData;
 	}
 	
-	public Map<Integer, List<Object[]>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+	public Map<Long, Map<Integer, Integer>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
 		return movieSentimentStatsDaoImpl.getTweetSentimentTimeSeriesDataForMovies(movieIds, startDate, endDate);
 	}
 	
-	public Map<Integer, List<Object[]>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
+	public Map<Long, Map<Integer, Integer>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
 		return movieSentimentStatsDaoImpl.getTweetStrengthTimeSeriesDataForMovies(movieIds, startDate, endDate);
 	}
 	
