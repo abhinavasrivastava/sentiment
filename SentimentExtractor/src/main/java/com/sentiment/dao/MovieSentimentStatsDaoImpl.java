@@ -1,5 +1,6 @@
 package com.sentiment.dao;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,19 +30,21 @@ public class MovieSentimentStatsDaoImpl {
 		}
 	}
 
-	public void saveStats(int movieId, String collectionDate, int numTweets, int sentimentScore, String tagCloud, Date date){
+	public void saveStats(int movieId, String collectionDate, int numTweets, int collectionWindowMin, int sentimentScore, String tagCloud, Date date){
 		String sql = "insert into movie_sentiment_stats ("
 				+ "movie_id,"
 				+ "collection_date,"
+				+ "collection_window_min,"
 				+ "num_tweets,"
 				+ "sentiment_score,"
 				+ "tag_cloud,"
 				+ "created_tx_stamp,"
-				+ "last_updated_tx_stamp) values(?,?,?,?,?,?,?)";
+				+ "last_updated_tx_stamp) values(?,?,?,?,?,?,?,?)";
 		
 		jdbcTemplate.update(sql, 
 				movieId,
 				collectionDate,
+				collectionWindowMin,
 				numTweets,
 				sentimentScore,
 				tagCloud,
@@ -51,14 +54,17 @@ public class MovieSentimentStatsDaoImpl {
 
 	public Object[][] getTweetSentimentTimeSeriesData(int movieId, String startDate, String endDate) {
 		Object[][] tweetSentimentTimeSeriesData = null;
-		String sql = "SELECT created_tx_stamp,sentiment_score FROM movie_sentiment_stats WHERE movie_id=? AND collection_date >=? AND collection_date <= ?";
+		String sql = "SELECT created_tx_stamp,"
+				+ "SUM(sentiment_score*num_tweets)/(IF (SUM(num_tweets) >0, SUM(num_tweets), 1)) as sentiment_score "
+				+ "FROM movie_sentiment_stats WHERE movie_id=? AND collection_date >=? "
+				+ "AND collection_date <=? GROUP BY collection_date";
 		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, movieId, startDate, endDate);
 		if(listMap != null && listMap.size() > 0){
 			tweetSentimentTimeSeriesData = new Object[listMap.size()][];
 			int idx = 0;
 			for(Map<String, Object>map : listMap){
 				Date time = (Date)map.get("created_tx_stamp");
-				Integer sentimentScore = (Integer)map.get("sentiment_score");
+				Integer sentimentScore = ((BigDecimal)map.get("sentiment_score")).intValue();
 				tweetSentimentTimeSeriesData[idx] = new Object[]{time.getTime(), sentimentScore};
 				idx++;
 			}
@@ -91,14 +97,17 @@ public class MovieSentimentStatsDaoImpl {
 	*/
 	public Map<Long, Map<Integer, Integer>> getTweetSentimentTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
 		Map<Long, Map<Integer, Integer>> tweetSentimentTimeSeriesData = null;
-		String sql = "SELECT movie_id, created_tx_stamp,sentiment_score FROM movie_sentiment_stats WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") AND collection_date >=? AND collection_date <= ?";
+		String sql = "SELECT movie_id, date(created_tx_stamp) as created_tx_stamp,"
+				+ "SUM(sentiment_score*num_tweets)/(IF (SUM(num_tweets) >0, SUM(num_tweets), 1)) as sentiment_score "
+				+ "FROM movie_sentiment_stats WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") "
+				+ "AND collection_date >=? AND collection_date <= ? GROUP BY movie_id,collection_date";
 		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, startDate, endDate);
 		if(listMap != null && listMap.size() > 0){
 			tweetSentimentTimeSeriesData = new LinkedHashMap<Long, Map<Integer,Integer>>();
 			for(Map<String, Object>map : listMap){
 				Integer movieId = (Integer)map.get("movie_id");
 				Date time = (Date)map.get("created_tx_stamp");
-				Integer sentimentScore = (Integer)map.get("sentiment_score");
+				Integer sentimentScore = ((BigDecimal)map.get("sentiment_score")).intValue();
 				
 				if(tweetSentimentTimeSeriesData.containsKey(time.getTime())){
 					tweetSentimentTimeSeriesData.get(time.getTime()).put(movieId, sentimentScore);
@@ -114,14 +123,16 @@ public class MovieSentimentStatsDaoImpl {
 	
 	public Object[][] getTweetStrengthTimeSeriesData(int movieId, String startDate, String endDate) {
 		Object[][] tweetStrengthTimeSeriesData = null;
-		String sql = "SELECT created_tx_stamp,num_tweets FROM movie_sentiment_stats WHERE movie_id=? AND collection_date >=? AND collection_date <= ?";
+		String sql = "SELECT created_tx_stamp,AVG(num_tweets/collection_window_min)*24*60 AS num_tweets "
+				+ "FROM movie_sentiment_stats WHERE movie_id=? AND collection_date >=? "
+				+ "AND collection_date <=? GROUP BY collection_date";
 		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, movieId, startDate, endDate);
 		if(listMap != null && listMap.size() > 0){
 			tweetStrengthTimeSeriesData = new Object[listMap.size()][];
 			int idx = 0;
 			for(Map<String, Object>map : listMap){
 				Date time = (Date)map.get("created_tx_stamp");
-				Integer numTweets = (Integer)map.get("num_tweets");
+				Integer numTweets = ((BigDecimal)map.get("num_tweets")).intValue();
 				tweetStrengthTimeSeriesData[idx] = new Object[]{time.getTime(), numTweets};
 				idx++;
 			}
@@ -131,15 +142,16 @@ public class MovieSentimentStatsDaoImpl {
 	
 	public Map<Long, Map<Integer, Integer>> getTweetStrengthTimeSeriesDataForMovies(List<Integer> movieIds, String startDate, String endDate) {
 		Map<Long, Map<Integer, Integer>> tweetStrengthTimeSeriesData = null;
-		String sql = "SELECT movie_id, created_tx_stamp,num_tweets FROM movie_sentiment_stats "
-				+ "WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") AND collection_date >=? AND collection_date <= ?";
+		String sql = "SELECT movie_id, date(created_tx_stamp) as created_tx_stamp, AVG(num_tweets/collection_window_min)*24*60 as num_tweets FROM movie_sentiment_stats "
+				+ "WHERE movie_id in (" + StringUtils.join(movieIds, ",") + ") "
+				+ "AND collection_date >=? AND collection_date <= ? group by movie_id, collection_date";
 		List<Map<String, Object>>listMap = jdbcTemplate.queryForList(sql, startDate, endDate);
 		if(listMap != null && listMap.size() > 0){
 			tweetStrengthTimeSeriesData = new LinkedHashMap<Long, Map<Integer,Integer>>();
 			for(Map<String, Object>map : listMap){
 				Integer movieId = (Integer)map.get("movie_id");
 				Date time = (Date)map.get("created_tx_stamp");
-				Integer numTweets = (Integer)map.get("num_tweets");
+				Integer numTweets = ((BigDecimal)map.get("num_tweets")).intValue();
 				
 				if(tweetStrengthTimeSeriesData.containsKey(time.getTime())){
 					tweetStrengthTimeSeriesData.get(time.getTime()).put(movieId, numTweets);

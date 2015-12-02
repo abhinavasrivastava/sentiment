@@ -40,10 +40,12 @@ public class MovieSentimentStatsServiceImpl {
 		List<Map<String, Double>> listMap = movieSentimentStatsDaoImpl.getMovieTagCloudData(movieId, startDate, endDate);
 		for(Map<String, Double> map : listMap){
 			for(String tag : map.keySet()){
-				if(movieTagCloudData.containsKey(tag)){
-					movieTagCloudData.put(tag, map.get(tag) + movieTagCloudData.get(tag));
-				}else{
-					movieTagCloudData.put(tag, map.get(tag));
+				if(!"Other Topics".equalsIgnoreCase(tag)){
+					if(movieTagCloudData.containsKey(tag)){
+						movieTagCloudData.put(tag, map.get(tag) + movieTagCloudData.get(tag));
+					}else{
+						movieTagCloudData.put(tag, map.get(tag));
+					}
 				}
 			}
 		}

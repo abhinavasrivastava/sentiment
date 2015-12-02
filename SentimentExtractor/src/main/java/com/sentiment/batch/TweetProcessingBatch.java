@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +27,9 @@ import twitter4j.TwitterStreamFactory;
 
 import com.sentiment.analyzer.SentimentAnalyzer;
 import com.sentiment.cache.MoviesCache;
+import com.sentiment.dao.CacheMasterDaoImpl;
 import com.sentiment.dao.MovieSentimentStatsDaoImpl;
+import com.sentiment.exception.AppException;
 import com.sentiment.model.MovieTwSearchDetail;
 import com.sentiment.processor.TopicClusterGenerator;
 
@@ -47,20 +50,34 @@ public class TweetProcessingBatch {
 	@Autowired
 	MovieSentimentStatsDaoImpl movieSentimentStatsDaoImpl;
 	
-	private static int COLLECTION_TIME_DURAION_MIN = 1;
-
+	@Autowired
+	CacheMasterDaoImpl cacheMasterDaoImpl;
+	
+	//private static int COLLECTION_TIME_DURAION_MIN = 1;
+	ResourceBundle rb = ResourceBundle.getBundle("app");
 
 	public void execute(){
+		logger.info("Tweet coletion started.");
 		Date date = new Date();
 		DateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
 		String collectionDate = outputFormatter.format(date); 
-		List<MovieTwSearchDetail>movies = moviesCache.getAllMovies();
+		//List<MovieTwSearchDetail>movies = moviesCache.getAllMovies();
+		List<MovieTwSearchDetail> movies = null;
+		try {
+			movies = cacheMasterDaoImpl.getAllMovies();
+		} catch (AppException e1) {
+			logger.error("Batch could not run due to DB failure.");
+			logger.error(e1.getMessage(), e1);
+		}
+		if(movies == null || movies.size() == 0) return;
+		
+		int collectionWindowMin = Integer.parseInt(rb.getString("tweet.collection.duration.min"));
 		for(MovieTwSearchDetail movie : movies){
-			if(movie.getStartDate().compareTo(new Date()) < 0 && movie.getEndDate().compareTo(new Date()) > 0){
+			if(movie.getStartDate().compareTo(new Date()) <= 0 && movie.getEndDate().compareTo(new Date()) >= 0){
 				//Open Stream & collect tweets for 14 minutes
 				String[] keywords = movie.getKeywords().split(",");
 				try {
-					List<String>tweets = collect(keywords);
+					List<String>tweets = collect(keywords, collectionWindowMin);
 					if(tweets.size() > 0){
 						//Process & compute
 						int count = tweets.size();
@@ -68,10 +85,10 @@ public class TweetProcessingBatch {
 						int sentimentScore = (int)((scores[0]*100) / (scores[0] + scores[1]));
 						Map<String, Double>clusters = topicClusterGenerator.getTopicClusters(tweets);
 						String tagCloud = getTagCloud(clusters);
-						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, sentimentScore, tagCloud, date);
+						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, collectionWindowMin, sentimentScore, tagCloud, date);
 					}else{
 						logger.info("No tweets for movieId - " + movie.getId());
-						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, 0, 0, null, date);
+						movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, 0, collectionWindowMin, 0, null, date);
 					}
 
 				} catch (Exception e) {
@@ -79,7 +96,49 @@ public class TweetProcessingBatch {
 				} 
 			}
 		}
+		Date endTime = new Date();
+		long timeTaken = (endTime.getTime() - date.getTime())/(1000*60);
+		logger.info("Tweet coletion finished. Time taken - " + timeTaken + " minutes");
 	}
+	
+	/*public void execute(){
+		Calendar cal = Calendar.getInstance();
+		cal.set(2015, 10, 12, 10, 0);
+
+		for(int i=0; i<26; i++){
+			Date date = cal.getTime();
+			DateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
+			String collectionDate = outputFormatter.format(date);
+			logger.info("Collection time - " + collectionDate);
+			List<MovieTwSearchDetail>movies = moviesCache.getAllMovies();
+			for(MovieTwSearchDetail movie : movies){
+				if(movie.getStartDate().compareTo(new Date()) <= 0 && movie.getEndDate().compareTo(new Date()) >= 0){
+					logger.info("start collecting tweets for movie - " + movie.getId());
+					//Open Stream & collect tweets for 14 minutes
+					String[] keywords = movie.getKeywords().split(",");
+					try {
+						List<String>tweets = collect(keywords);
+						if(tweets.size() > 0){
+							//Process & compute
+							int count = tweets.size();
+							double[] scores = sentimentAnalyzer.analyzeSentiment(tweets);
+							int sentimentScore = (int)((scores[0]*100) / (scores[0] + scores[1]));
+							Map<String, Double>clusters = topicClusterGenerator.getTopicClusters(tweets);
+							String tagCloud = getTagCloud(clusters);
+							movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, count, sentimentScore, tagCloud, date);
+						}else{
+							logger.info("No tweets for movieId - " + movie.getId());
+							movieSentimentStatsDaoImpl.saveStats(movie.getId(), collectionDate, 0, 0, null, date);
+						}
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					} 
+				}
+			}
+			cal.add(Calendar.HOUR, 12);
+		}
+	}*/
 
 	private String getTagCloud(Map<String, Double> clusters) {
 		StringBuilder sb = new StringBuilder();
@@ -121,9 +180,9 @@ public class TweetProcessingBatch {
 	}
 	TwitterStream twitterStream = new TwitterStreamFactory().getInstance();
 	
-	public List<String> collect(final String[] keywords) throws TwitterException, IOException{
+	public List<String> collect(final String[] keywords, int collectionWindowMin) throws TwitterException, IOException{
 		long start = System.currentTimeMillis();
-		long end = start + COLLECTION_TIME_DURAION_MIN*60*1000; // 60 seconds * 1000 ms/sec
+		long end = start + collectionWindowMin*60*1000; // 60 seconds * 1000 ms/sec
 
 		final BlockingQueue<Status> tweets = new LinkedBlockingQueue<Status>(); 
 		/*StatusListener listener = new StatusListener(){
@@ -186,7 +245,7 @@ public class TweetProcessingBatch {
 		return collected;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) {/*
 		try {
 			new TweetProcessingBatch().collect(new String[]{"bihar"});
 		} catch (TwitterException e) {
@@ -194,6 +253,6 @@ public class TweetProcessingBatch {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	*/}
 
 }

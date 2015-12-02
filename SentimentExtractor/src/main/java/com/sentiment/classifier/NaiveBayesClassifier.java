@@ -35,7 +35,7 @@ import org.springframework.stereotype.Service;
 public class NaiveBayesClassifier {
 	Logger logger = Logger.getLogger(NaiveBayesClassifier.class);
 
-	ResourceBundle rb = ResourceBundle.getBundle("file");
+	ResourceBundle rb = ResourceBundle.getBundle("app");
 	NaiveBayesClassificationModel model;
 
 	File posDir = new File(rb.getString("posDir"));
